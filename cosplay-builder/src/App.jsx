@@ -1,95 +1,59 @@
-
 // ============================================
-// APP.JSX - The Main Component
+// APP.JSX - Main Component with Material UI
 // ============================================
-// This is the root component of your application.
-// It manages the overall state and coordinates child components.
-
-// Import the useState hook - lets you add state to function components
 import { useState } from "react";
-
-// Import child components (these are custom components you created)
+import { ThemeProvider, createTheme, CssBaseline, Box } from "@mui/material";
 import CharacterSelection from "./components/CharacterSelection";
-import AppearanceSelection from "./components/AppearanceSelection";
-import OutfitBuilder from "./components/OutfitBuilder";
+import CostumeBuilder from "./components/CostumeBuilder";
 
-// FUNCTION COMPONENT: A JavaScript function that returns JSX
+// Create Material UI dark theme
+const theme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#9c27b0', // Purple theme for cosplay
+    },
+    secondary: {
+      main: '#f50057',
+    },
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+  },
+});
+
 function App() {
-  // ==================== STATE MANAGEMENT ====================
-  // STATE: Data that can change over time and triggers re-renders
-  // useState returns [currentValue, functionToUpdateValue]
-  // Initially, both are null (nothing selected yet)
-  const [selectedCharacter, setSelectedCharacter] = useState(null);
-  const [selectedAppearance, setSelectedAppearance] = useState(null);
-  const [selectedOutfitPieces, setSelectedOutfitPieces] = useState([]);
+  // STATE: Track which character is confirmed (not just selected)
+  const [confirmedCharacter, setConfirmedCharacter] = useState(null);
 
-  // When state changes, React re-renders this component
-  // and all its children with the new data
+  // HANDLER: Go back to character selection
+  const handleBackToCharacters = () => {
+    setConfirmedCharacter(null);
+  };
 
-  // ==================== RENDER (JSX) ====================
-  // JSX: Looks like HTML but it's actually JavaScript
-  // React transforms this into actual DOM elements
   return (
-    <div>
-      <h1>Cosplay Builder</h1>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        {/* PHASE 1: Character Selection (show until character is confirmed) */}
+        {!confirmedCharacter && (
+          <CharacterSelection onConfirmCharacter={setConfirmedCharacter} />
+        )}
 
-      {/* INLINE STYLES: Not recommended for production, but works */}
-      <style>{`
-        h1 {
-          text-align: left;
-          margin-left: 50px;
-          margin-right: 25px;
-          margin-top: 25px;
-          margin-bottom: 25px;
-        }
-      `}</style>
-
-      {/* ==================== COMPONENT 1: Character Selection ==================== */}
-      {/* PROPS: Data passed from parent to child (like function arguments) */}
-      <CharacterSelection
-        selectedCharacter={selectedCharacter}
-        onSelectCharacter={(character) => {
-          // When state changes, reset dependent selections
-          setSelectedCharacter(character);
-          setSelectedAppearance(null);
-          setSelectedOutfitPieces([]);
-        }}
-      />
-
-      {/* ==================== CONDITIONAL RENDERING ==================== */}
-      {/* The && operator: Only render if condition is true */}
-      {/* If selectedCharacter exists (not null), show the paragraph */}
-      {selectedCharacter && (
-        <p>
-          Selected character: {selectedCharacter.name}
-        </p>
-      )}
-
-      {/* ==================== COMPONENT 2: Appearance Selection ==================== */}
-      {/* Only show AppearanceSelection if a character is selected */}
-      {selectedCharacter && (
-        <AppearanceSelection
-          character={selectedCharacter}
-          selectedAppearance={selectedAppearance}
-          onSelectAppearance={(appearance) => {
-            setSelectedAppearance(appearance);
-            setSelectedOutfitPieces([]);
-          }}
-        />
-      )}
-
-      {/* ==================== COMPONENT 3: Outfit Builder ==================== */}
-      {/* Only show OutfitBuilder if an appearance is selected */}
-      {selectedAppearance && (
-        <OutfitBuilder
-          appearance={selectedAppearance}
-          selectedOutfitPieces={selectedOutfitPieces}
-          setSelectedOutfitPieces={setSelectedOutfitPieces}
-        />
-      )}
-    </div>
+        {/* PHASE 2: Costume Builder (show after character is confirmed) */}
+        {confirmedCharacter && (
+          <CostumeBuilder
+            character={confirmedCharacter}
+            onBack={handleBackToCharacters}
+          />
+        )}
+      </Box>
+    </ThemeProvider>
   );
 }
 
-// Export so other files can import this component
 export default App;

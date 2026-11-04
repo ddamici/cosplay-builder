@@ -1,3 +1,4 @@
+
 // ============================================
 // OUTFIT BUILDER COMPONENT
 // ============================================
@@ -5,18 +6,16 @@
 // 1. Selecting which outfit pieces they want to include
 // 2. Displaying their selected pieces
 
-// Import useState hook for managing local state
-import { useState } from "react";
-
 // FUNCTION COMPONENT with PROPS
-function OutfitBuilder({ appearance }) {
+function OutfitBuilder({
+  appearance,
+  selectedOutfitPieces,
+  setSelectedOutfitPieces,
+}) {
   // Props:
   // - appearance: The selected appearance object with outfit pieces
-
-  // ==================== LOCAL STATE ====================
-  // Track which outfit pieces the user has selected
-  // Initial value: empty array (nothing selected yet)
-  const [selectedOutfitPieces, setSelectedOutfitPieces] = useState([]);
+  // - selectedOutfitPieces: Array of outfit pieces selected by the user
+  // - setSelectedOutfitPieces: Function to update the selected outfit pieces
 
   // ==================== EVENT HANDLER ====================
   // This function handles toggling outfit pieces on/off
@@ -32,7 +31,7 @@ function OutfitBuilder({ appearance }) {
       // Spread operator (...) creates a new array with existing items + new item
       setSelectedOutfitPieces([...selectedOutfitPieces, outfitPiece]);
     }
-    
+
     // NOTE: We create a NEW array instead of modifying the existing one
     // This is important in React - state should be immutable
   }
@@ -57,7 +56,6 @@ function OutfitBuilder({ appearance }) {
             // When checkbox changes, call our handler function
             onChange={() => handleOutfitPieceChange(outfitPiece)}
           />
-          
           {/* Display the outfit piece name next to checkbox */}
           {outfitPiece}
         </label>
@@ -71,7 +69,6 @@ function OutfitBuilder({ appearance }) {
           <li key={outfitPiece}>{outfitPiece}</li>
         ))}
       </ul>
-      
       {/* If nothing is selected, the list will be empty */}
     </section>
   );
