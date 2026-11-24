@@ -1,0 +1,582 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "FanCon Cosplay Builder API",
+    "version": "1.0.0",
+    "description": "API for the Cosplay Builder application - helps users select characters, choose costume pieces, and generate AI try-on images"
+  },
+  "servers": [
+    {
+      "url": "https://api.fancon.ai/cosplay-builder",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Characters",
+      "description": "Character operations"
+    },
+    {
+      "name": "Appearances",
+      "description": "Character appearances and outfits"
+    },
+    {
+      "name": "Outfit Pieces",
+      "description": "Individual costume pieces"
+    },
+    {
+      "name": "User Builds",
+      "description": "User-created costume builds (authenticated)"
+    },
+    {
+      "name": "AI Try-On",
+      "description": "AI-powered costume visualization"
+    }
+  ],
+  "paths": {
+    "/api/v1/cosplay-characters": {
+      "get": {
+        "tags": ["Characters"],
+        "summary": "Get all cosplay characters",
+        "description": "Returns characters that have costume data (separate from main characters table)",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by character name"
+          },
+          {
+            "name": "franchise",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by franchise (e.g., Marvel, DC)"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of cosplay characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/CosplayCharacter" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cosplay-characters/{characterId}": {
+      "get": {
+        "tags": ["Characters"],
+        "summary": "Get single cosplay character with all appearances",
+        "parameters": [
+          {
+            "name": "characterId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Character details with appearances",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CosplayCharacterDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Character not found"
+          }
+        }
+      }
+    },
+    "/api/v1/appearances/{appearanceId}": {
+      "get": {
+        "tags": ["Appearances"],
+        "summary": "Get appearance with outfit pieces",
+        "parameters": [
+          {
+            "name": "appearanceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appearance details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppearanceDetail" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/outfit-pieces/{pieceId}": {
+      "get": {
+        "tags": ["Outfit Pieces"],
+        "summary": "Get outfit piece details with purchase links",
+        "parameters": [
+          {
+            "name": "pieceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Outfit piece details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OutfitPieceDetail" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user-builds": {
+      "get": {
+        "tags": ["User Builds"],
+        "summary": "Get user's saved costume builds",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User's builds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/UserBuild" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": ["User Builds"],
+        "summary": "Create a new costume build",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateUserBuild" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Build created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserBuild" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user-builds/{buildId}": {
+      "get": {
+        "tags": ["User Builds"],
+        "summary": "Get specific build details",
+        "parameters": [
+          {
+            "name": "buildId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Build details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserBuildDetail" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["User Builds"],
+        "summary": "Update build",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "buildId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateUserBuild" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Build updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["User Builds"],
+        "summary": "Delete build",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "buildId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Build deleted"
+          }
+        }
+      }
+    },
+    "/api/v1/ai-tryon": {
+      "post": {
+        "tags": ["AI Try-On"],
+        "summary": "Generate AI try-on image",
+        "description": "Upload user photo and get AI-generated image with selected costume",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "User's photo"
+                  },
+                  "build_id": {
+                    "type": "integer",
+                    "description": "ID of the costume build to apply"
+                  },
+                  "appearance_id": {
+                    "type": "integer",
+                    "description": "Alternative: specific appearance ID"
+                  }
+                },
+                "required": ["user_photo"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI-generated image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "image_url": {
+                      "type": "string",
+                      "description": "URL of generated image"
+                    },
+                    "processing_time": {
+                      "type": "number",
+                      "description": "Time taken in seconds"
+                    },
+                    "model_version": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid image or parameters"
+          }
+        }
+      }
+    },
+    "/api/v1/ai-tryon/{jobId}": {
+      "get": {
+        "tags": ["AI Try-On"],
+        "summary": "Get AI try-on job status",
+        "description": "For async processing - check if image generation is complete",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["pending", "processing", "completed", "failed"]
+                    },
+                    "image_url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CosplayCharacter": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "image": { "type": "string", "format": "uri" },
+          "franchise": { "type": "string" },
+          "category": { "type": "string" },
+          "appearance_count": { "type": "integer", "description": "Number of available costumes" }
+        }
+      },
+      "CosplayCharacterDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "image": { "type": "string", "format": "uri" },
+          "franchise": { "type": "string" },
+          "category": { "type": "string" },
+          "appearances": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Appearance" }
+          }
+        }
+      },
+      "Appearance": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string", "example": "Black Widow (2021)" },
+          "outfitName": { "type": "string", "example": "Tactical Gear" },
+          "description": { "type": "string" },
+          "imageUrl": { "type": "string", "format": "uri" },
+          "releaseYear": { "type": "integer" },
+          "outfitPieces": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "AppearanceDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "outfitName": { "type": "string" },
+          "description": { "type": "string" },
+          "imageUrl": { "type": "string", "format": "uri" },
+          "outfitPieces": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OutfitPiece" }
+          }
+        }
+      },
+      "OutfitPiece": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string", "example": "White Jumpsuit" },
+          "type": { "type": "string", "enum": ["Clothing", "Accessory", "Wig", "Prop", "Footwear"] },
+          "isOptional": { "type": "boolean" },
+          "estimatedCostMin": { "type": "number", "format": "decimal" },
+          "estimatedCostMax": { "type": "number", "format": "decimal" },
+          "difficultyLevel": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+          "notes": { "type": "string" }
+        }
+      },
+      "OutfitPieceDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "isOptional": { "type": "boolean" },
+          "estimatedCostMin": { "type": "number" },
+          "estimatedCostMax": { "type": "number" },
+          "difficultyLevel": { "type": "string" },
+          "notes": { "type": "string" },
+          "imageUrl": { "type": "string", "format": "uri", "description": "Image of this specific piece" },
+          "purchaseLinks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PurchaseLink" }
+          }
+        }
+      },
+      "PurchaseLink": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "vendor": { "type": "string", "example": "Amazon" },
+          "url": { "type": "string", "format": "uri" },
+          "price": { "type": "number", "format": "decimal" },
+          "currency": { "type": "string", "default": "USD" },
+          "in_stock": { "type": "boolean" },
+          "affiliate_link": { "type": "boolean" },
+          "last_updated": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UserBuild": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "user_id": { "type": "integer", "nullable": true, "description": "Null for anonymous builds" },
+          "character_id": { "type": "integer" },
+          "character_name": { "type": "string" },
+          "appearance_id": { "type": "integer" },
+          "appearance_title": { "type": "string" },
+          "build_name": { "type": "string", "example": "My Yelena Costume for Comic-Con 2026" },
+          "selected_pieces": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "Array of outfit piece IDs"
+          },
+          "is_public": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UserBuildDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/UserBuild" },
+          {
+            "type": "object",
+            "properties": {
+              "outfit_pieces": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/OutfitPieceDetail" }
+              },
+              "total_estimated_cost": { "type": "number" },
+              "ai_render_url": {
+                "type": "string",
+                "format": "uri",
+                "nullable": true,
+                "description": "AI-generated try-on image if available"
+              }
+            }
+          }
+        ]
+      },
+      "CreateUserBuild": {
+        "type": "object",
+        "required": ["character_id", "appearance_id", "selected_pieces"],
+        "properties": {
+          "character_id": { "type": "integer" },
+          "appearance_id": { "type": "integer" },
+          "build_name": { "type": "string" },
+          "selected_pieces": {
+            "type": "array",
+            "items": { "type": "integer" }
+          },
+          "is_public": { "type": "boolean", "default": false },
+          "notes": { "type": "string" }
+        }
+      },
+      "UpdateUserBuild": {
+        "type": "object",
+        "properties": {
+          "build_name": { "type": "string" },
+          "selected_pieces": {
+            "type": "array",
+            "items": { "type": "integer" }
+          },
+          "is_public": { "type": "boolean" },
+          "notes": { "type": "string" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "totalPages": { "type": "integer" }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Optional - for logged-in users. Anonymous builds supported."
+      }
+    }
+  }
+}

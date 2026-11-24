@@ -7,7 +7,6 @@ import {
   Box,
   Typography,
   Button,
-  Grid,
   Card,
   CardContent,
   Avatar,
@@ -22,12 +21,15 @@ import {
   Link,
   IconButton,
   Divider,
+  CardMedia,
+  Grid,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ImageIcon from "@mui/icons-material/Image";
+import { getCostumePiece, hasImage } from "../data/outfitPieceImages";
 
 function CostumeBuilder({ character, onBack }) {
   // STATE: Selected appearance
@@ -155,60 +157,30 @@ function CostumeBuilder({ character, onBack }) {
             </Typography>
           </Card>
 
-          {/* COSTUME PIECES TABLE */}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'background.default' }}>
-                  <TableCell>Preview</TableCell>
-                  <TableCell>Piece Name</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Estimated Cost</TableCell>
-                  <TableCell>Purchase Link</TableCell>
-                </TableRow>
-              </TableHead>
+          {/* COSTUME PIECES TABLE (Desktop) */}
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'background.default' }}>
+                    <TableCell>Preview</TableCell>
+                    <TableCell>Piece Name</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Estimated Cost</TableCell>
+                    <TableCell>Purchase Links</TableCell>
+                  </TableRow>
+                </TableHead>
               <TableBody>
-                {selectedAppearance.outfitPieces.map((piece, index) => {
-                  // Generate mock data for demonstration
-                  const pieceTypes = {
-                    'White Jumpsuit': 'Clothing',
-                    'Tactical Vest': 'Clothing',
-                    'Utility Belt': 'Accessory',
-                    'White Lace-up Boots': 'Footwear',
-                    'Fingerless Gloves': 'Accessory',
-                    'Holster': 'Accessory',
-                    'Wig': 'Wig',
-                    'Black Bodysuit': 'Clothing',
-                    'Black Boots': 'Footwear',
-                  };
-
-                  const mockCosts = {
-                    'White Jumpsuit': '$89.99',
-                    'Tactical Vest': '$45.00',
-                    'Utility Belt': '$25.00',
-                    'White Lace-up Boots': '$65.00',
-                    'Fingerless Gloves': '$15.00',
-                    'Holster': '$20.00',
-                    'Wig': '$35.00',
-                    'Black Bodysuit': '$75.00',
-                    'Black Boots': '$55.00',
-                  };
-
-                  const mockVendors = {
-                    'White Jumpsuit': 'Amazon',
-                    'Tactical Vest': 'Etsy',
-                    'Utility Belt': 'Amazon',
-                    'White Lace-up Boots': 'Amazon',
-                    'Fingerless Gloves': 'Amazon',
-                    'Holster': 'Spirit Halloween',
-                    'Wig': 'Amazon',
-                    'Black Bodysuit': 'Amazon',
-                    'Black Boots': 'Amazon',
-                  };
-
-                  const pieceType = pieceTypes[piece] || 'Item';
-                  const cost = mockCosts[piece] || '$29.99';
-                  const vendor = mockVendors[piece] || 'Amazon';
+                {selectedAppearance.outfitPieces.map((pieceName, index) => {
+                  // Get complete piece data (simulates database row)
+                  const pieceData = getCostumePiece(pieceName);
+                  
+                  if (!pieceData) return null; // Skip if piece not found
+                  
+                  // Get lowest price from purchase links
+                  const lowestPrice = pieceData.purchaseLinks.length > 0 
+                    ? Math.min(...pieceData.purchaseLinks.map(link => link.price))
+                    : 29.99;
 
                   return (
                     <TableRow
@@ -217,59 +189,113 @@ function CostumeBuilder({ character, onBack }) {
                         '&:hover': { bgcolor: 'action.hover' },
                       }}
                     >
-                      {/* PREVIEW (Mock image) */}
+                      {/* PREVIEW IMAGE */}
                       <TableCell>
                         <Box
                           sx={{
-                            width: 60,
-                            height: 60,
+                            width: 80,
+                            height: 80,
                             bgcolor: 'background.default',
                             borderRadius: 1,
+                            overflow: 'hidden',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                           }}
                         >
-                          <ImageIcon sx={{ fontSize: 32, color: 'text.secondary' }} />
+                          {pieceData.imageUrl ? (
+                            <CardMedia
+                              component="img"
+                              image={pieceData.imageUrl}
+                              alt={pieceData.name}
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                              }}
+                            />
+                          ) : (
+                            <Box sx={{ textAlign: 'center', p: 1 }}>
+                              <ImageIcon sx={{ fontSize: 28, color: 'text.secondary', mb: 0.5 }} />
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                                Coming Soon
+                              </Typography>
+                            </Box>
+                          )}
                         </Box>
                       </TableCell>
 
                       {/* PIECE NAME */}
                       <TableCell>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {piece}
+                          {pieceData.name}
                         </Typography>
                       </TableCell>
 
                       {/* TYPE */}
                       <TableCell>
-                        <Chip label={pieceType} size="small" variant="outlined" />
+                        <Chip label={pieceData.type} size="small" variant="outlined" />
                       </TableCell>
 
-                      {/* COST */}
+                      {/* COST RANGE */}
                       <TableCell>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {cost}
-                        </Typography>
+                        {pieceData.purchaseLinks.length > 0 ? (
+                          <Box>
+                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                              ${lowestPrice.toFixed(2)}+
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {pieceData.purchaseLinks.length} {pieceData.purchaseLinks.length === 1 ? 'option' : 'options'}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            Price varies
+                          </Typography>
+                        )}
                       </TableCell>
 
-                      {/* PURCHASE LINK */}
+                      {/* PURCHASE LINKS */}
                       <TableCell>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<ShoppingCartIcon />}
-                          component={Link}
-                          href={`https://amazon.com/s?k=${encodeURIComponent(piece)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          sx={{
-                            textTransform: 'none',
-                            textDecoration: 'none',
-                          }}
-                        >
-                          Buy on {vendor}
-                        </Button>
+                        {pieceData.purchaseLinks.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {pieceData.purchaseLinks.map((link, linkIndex) => (
+                              <Button
+                                key={link.id}
+                                variant={linkIndex === 0 ? "contained" : "outlined"}
+                                size="small"
+                                startIcon={<ShoppingCartIcon />}
+                                component={Link}
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{
+                                  textTransform: 'none',
+                                  textDecoration: 'none',
+                                  minWidth: 140,
+                                }}
+                              >
+                                {link.vendor} - ${link.price.toFixed(2)}
+                              </Button>
+                            ))}
+                          </Box>
+                        ) : (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<ShoppingCartIcon />}
+                            component={Link}
+                            href={`https://amazon.com/s?k=${encodeURIComponent(pieceData.name)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              textTransform: 'none',
+                              textDecoration: 'none',
+                            }}
+                          >
+                            Search Amazon
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -277,19 +303,147 @@ function CostumeBuilder({ character, onBack }) {
               </TableBody>
             </Table>
           </TableContainer>
+          </Box>
+
+          {/* COSTUME PIECES CARDS (Mobile) */}
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            <Grid container spacing={2}>
+              {selectedAppearance.outfitPieces.map((pieceName, index) => {
+                // Get complete piece data (simulates database row)
+                const pieceData = getCostumePiece(pieceName);
+                
+                if (!pieceData) return null; // Skip if piece not found
+                
+                const lowestPrice = pieceData.purchaseLinks.length > 0 
+                  ? Math.min(...pieceData.purchaseLinks.map(link => link.price))
+                  : 29.99;
+
+                return (
+                  <Grid item xs={12} key={index}>
+                    <Card>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                          {/* IMAGE */}
+                          <Box
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              bgcolor: 'background.default',
+                              borderRadius: 1,
+                              overflow: 'hidden',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {pieceData.imageUrl ? (
+                              <CardMedia
+                                component="img"
+                                image={pieceData.imageUrl}
+                                alt={pieceData.name}
+                                sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                }}
+                              />
+                            ) : (
+                              <Box sx={{ textAlign: 'center', p: 1 }}>
+                                <ImageIcon sx={{ fontSize: 28, color: 'text.secondary', mb: 0.5 }} />
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                                  Coming Soon
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+
+                          {/* INFO */}
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                              {pieceData.name}
+                            </Typography>
+                            <Chip label={pieceData.type} size="small" variant="outlined" sx={{ mb: 1 }} />
+                            <Typography variant="body2" color="text.secondary">
+                              From ${lowestPrice.toFixed(2)}
+                              {pieceData.purchaseLinks.length > 1 && ` • ${pieceData.purchaseLinks.length} options`}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        {/* PURCHASE BUTTONS */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {pieceData.purchaseLinks.length > 0 ? (
+                            pieceData.purchaseLinks.map((link, linkIndex) => (
+                              <Button
+                                key={link.id}
+                                variant={linkIndex === 0 ? "contained" : "outlined"}
+                                size="small"
+                                startIcon={<ShoppingCartIcon />}
+                                component={Link}
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                fullWidth
+                                sx={{
+                                  textTransform: 'none',
+                                  textDecoration: 'none',
+                                }}
+                              >
+                                {link.vendor} - ${link.price.toFixed(2)}
+                              </Button>
+                            ))
+                          ) : (
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<ShoppingCartIcon />}
+                              component={Link}
+                              href={`https://amazon.com/s?k=${encodeURIComponent(pieceData.name)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              fullWidth
+                              sx={{
+                                textTransform: 'none',
+                                textDecoration: 'none',
+                              }}
+                            >
+                              Search Amazon
+                            </Button>
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Box>
 
           {/* TOTAL ESTIMATE */}
           <Card sx={{ mt: 3, p: 3, bgcolor: 'primary.main' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">
-                Estimated Total Cost:
-              </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+              <Box>
+                <Typography variant="h6">
+                  Estimated Total Cost:
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                  Based on lowest available prices
+                </Typography>
+              </Box>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                $295.00
+                ${selectedAppearance.outfitPieces.reduce((total, pieceName) => {
+                  const pieceData = getCostumePiece(pieceName);
+                  if (!pieceData) return total;
+                  const lowestPrice = pieceData.purchaseLinks.length > 0 
+                    ? Math.min(...pieceData.purchaseLinks.map(link => link.price))
+                    : 29.99;
+                  return total + lowestPrice;
+                }, 0).toFixed(2)}
               </Typography>
             </Box>
-            <Typography variant="body2" sx={{ mt: 1, opacity: 0.9 }}>
-              * Prices are estimates and may vary
+            <Typography variant="body2" sx={{ mt: 2, opacity: 0.9 }}>
+              * Prices are estimates and may vary by vendor and availability
             </Typography>
           </Card>
         </Box>
