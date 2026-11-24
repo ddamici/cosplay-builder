@@ -2,23 +2,35 @@
 // APP.JSX - Main Component with Material UI
 // ============================================
 import { useState } from "react";
-import { ThemeProvider, createTheme, CssBaseline, Box } from "@mui/material";
+import {
+  ThemeProvider,
+  createTheme,
+  CssBaseline,
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Badge,
+} from "@mui/material";
+import BookmarkAddedIcon from "@mui/icons-material/BookmarkAdded";
 import CharacterSelection from "./components/CharacterSelection";
 import CostumeBuilder from "./components/CostumeBuilder";
+import SavedBuilds from "./components/SavedBuilds";
+import { getSavedBuilds } from "./services/savedBuilds";
 
-// Create Material UI dark theme
 const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: "dark",
     primary: {
-      main: '#9c27b0', // Purple theme for cosplay
+      main: "#9c27b0",
     },
     secondary: {
-      main: '#f50057',
+      main: "#f50057",
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: "#121212",
+      paper: "#1e1e1e",
     },
   },
   typography: {
@@ -27,28 +39,89 @@ const theme = createTheme({
 });
 
 function App() {
-  // STATE: Track which character is confirmed (not just selected)
+  // null | character object
   const [confirmedCharacter, setConfirmedCharacter] = useState(null);
+  // "select" | "build" | "saved"
+  const [view, setView] = useState("select");
+  const [savedCount, setSavedCount] = useState(() => getSavedBuilds().length);
 
-  // HANDLER: Go back to character selection
+  const refreshSavedCount = () => {
+    setSavedCount(getSavedBuilds().length);
+  };
+
+  const handleConfirmCharacter = (character) => {
+    setConfirmedCharacter(character);
+    setView("build");
+  };
+
   const handleBackToCharacters = () => {
     setConfirmedCharacter(null);
+    setView("select");
+    refreshSavedCount();
+  };
+
+  const handleViewSavedBuilds = () => {
+    refreshSavedCount();
+    setView("saved");
+  };
+
+  const handleBackFromSaved = () => {
+    if (confirmedCharacter) {
+      setView("build");
+    } else {
+      setView("select");
+    }
+    refreshSavedCount();
   };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-        {/* PHASE 1: Character Selection (show until character is confirmed) */}
-        {!confirmedCharacter && (
-          <CharacterSelection onConfirmCharacter={setConfirmedCharacter} />
+      <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+        <AppBar position="sticky" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Toolbar sx={{ gap: 2 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                flexGrow: 1,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+              onClick={handleBackToCharacters}
+            >
+              Cosplay Builder
+            </Typography>
+            <Button
+              color="inherit"
+              startIcon={
+                <Badge badgeContent={savedCount} color="secondary" max={99}>
+                  <BookmarkAddedIcon />
+                </Badge>
+              }
+              onClick={handleViewSavedBuilds}
+            >
+              My Outfits
+            </Button>
+          </Toolbar>
+        </AppBar>
+
+        {view === "select" && (
+          <CharacterSelection onConfirmCharacter={handleConfirmCharacter} />
         )}
 
-        {/* PHASE 2: Costume Builder (show after character is confirmed) */}
-        {confirmedCharacter && (
+        {view === "build" && confirmedCharacter && (
           <CostumeBuilder
             character={confirmedCharacter}
             onBack={handleBackToCharacters}
+            onViewSavedBuilds={handleViewSavedBuilds}
+            onBuildSaved={refreshSavedCount}
+          />
+        )}
+
+        {view === "saved" && (
+          <SavedBuilds
+            onBack={handleBackFromSaved}
+            onBuildsChanged={refreshSavedCount}
           />
         )}
       </Box>

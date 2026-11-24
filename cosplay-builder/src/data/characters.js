@@ -19,13 +19,12 @@ const characters = [
                 id: 1,
                 title: "Black Widow (2021)",
                 outfitName: "Tactical Gear",
-                description: "Worn during main fight sequences",
                 outfitPieces: [
                   "White Jumpsuit",
                   "Tactical Vest",
                   "Utility Belt",
                   "White Lace-up Boots",
-                  "Tactical Fingerless Gloves",
+                  "Fingerless Gloves",
                   "Holster",
                   "Wig",
                 ],
@@ -34,12 +33,11 @@ const characters = [
                 id: 2,
                 title: "Thunderbolts* (2025)",
                 outfitName: "Tactical Gear",
-                description: "Worn during main fight sequences",
                 outfitPieces: [
                   "Black Bodysuit",
                   "Utility Belt",
                   "Black Boots",
-                  "Tactical Fingerless Gloves",
+                  "Fingerless Gloves",
                   "Holster",
                   "Wig",
                 ],
@@ -75,7 +73,6 @@ const characters = [
       id: 9,
       name: "Blade",
       image: "https://fancon.s3.us-east-2.amazonaws.com/characters/blade.webp",
-      width: "300"
     },
   ];
   
